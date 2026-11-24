@@ -1,4 +1,8 @@
 # NEVER commit the git-crypt key or any decrypted copy outside papers/.
 *.key
 git-crypt-key*
+age-key*
 .DS_Store
+# Photos and PDFs fetched from R2 and decrypted locally - never commit these.
+papers/*/pages/
+papers/*/source.pdf

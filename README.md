@@ -10,6 +10,13 @@ key from Om (WhatsApp). Never post the key anywhere public, and never commit
 it to this repo. If the key leaks, tell Om — he will rotate it and
 re-encrypt everything.
 
+The page photos and source PDFs do not live in git at all. They live in
+Cloudflare R2, encrypted with age, and this repo only holds their links
+(`assets.json` in each paper folder). Two keys, two jobs:
+- **git-crypt key** — unlocks the repo (the md files and the links).
+- **age key** — decrypts the photos and PDFs downloaded from R2.
+Get both from Om on WhatsApp.
+
 ## Trial set: 10 papers
 
 | Paper | Year | Rows | Marks | Notes |
@@ -26,20 +33,25 @@ re-encrypt everything.
 | ZOODSM101T | 2023 | 25 | 70/70 | Q18 tail cut off in the photo — source gap, do not guess |
 
 Each paper folder has `staged.md` (the paper: details, full question text,
-question table), `report.json` (machine checks), and `pages/pg-N.png`
-(the original page photos — the ground truth).
+question table), `report.json` (machine checks), and `assets.json` (links
+to the encrypted photos and source PDF in R2).
 
 ## Setup (once)
 
-1. Install git and git-crypt.
-   - macOS: `brew install git git-crypt`
-   - Ubuntu/Debian: `sudo apt install git git-crypt`
+1. Install git, git-crypt and age.
+   - macOS: `brew install git git-crypt age`
+   - Ubuntu/Debian: `sudo apt install git git-crypt age`
    - Windows: install Git for Windows, then git-crypt from its releases
-     (or `choco install git-crypt`).
+     (or `choco install git-crypt`) and age from
+     github.com/FiloSottile/age/releases.
+   - You also need Python 3 (ships with macOS and Linux) for the fetch
+     script.
 2. Clone: `git clone https://github.com/Omdas11/examarchive-verification.git`
-3. Get the key file from Om on WhatsApp and save it somewhere safe
-   **outside** this repo, e.g. `~/examarchive-key`.
-4. Unlock: `cd examarchive-verification && git-crypt unlock ~/examarchive-key`
+3. Get the two key files from Om on WhatsApp and save them somewhere safe
+   **outside** this repo, e.g. `~/examarchive-key` (git-crypt) and
+   `~/examarchive-age-key` (age).
+4. Unlock the repo:
+   `cd examarchive-verification && git-crypt unlock ~/examarchive-key`
    After this, the paper files read normally. They are still encrypted in
    git — encryption happens automatically when you commit.
 5. Check it worked: `cat papers/HISDSC303T-2025/staged.md` should show a
@@ -49,14 +61,20 @@ question table), `report.json` (machine checks), and `pages/pg-N.png`
 
 1. **Claim it first.** Say in the WhatsApp group which paper you are
    taking, so two people never verify the same paper at once.
-2. Open `papers/<CODE>-<YEAR>/staged.md` and the photos in
+2. Fetch its photos (encrypted download, decrypted on your machine):
+   `python3 scripts/fetch-images.py HISDSC303T-2025`
+   They land in `papers/HISDSC303T-2025/pages/` (plus `source.pdf`).
+   If your age key is not at `~/examarchive-age-key`, pass it:
+   `python3 scripts/fetch-images.py HISDSC303T-2025 --key <path-to-key>`.
+   Re-running skips files you already have.
+3. Open `papers/<CODE>-<YEAR>/staged.md` and the photos in
    `papers/<CODE>-<YEAR>/pages/`. Read the photos, not the md — the md is
    what you are checking.
-3. Work through the paper with Antigravity (or by hand): compare every
+4. Work through the paper with Antigravity (or by hand): compare every
    question, every figure and every mark against the photo. Fix what the
    photo proves wrong, in `staged.md` — both the question text AND the
    question table row, so they stay in sync.
-4. Rules:
+5. Rules:
    - Never guess text the photo hides. If a word, number or figure is cut
      off, covered or unreadable in the photo, leave it as `[illegible]`.
      Do not invent it, even if you can guess it.
@@ -69,14 +87,14 @@ question table), `report.json` (machine checks), and `pages/pg-N.png`
      instead of forcing the total.
    - Keep the `★★★` end mark at the end of the last question if the
      photo shows it.
-5. Commit and push:
+6. Commit and push:
    - `git add papers/<CODE>-<YEAR>/staged.md`
    - `git commit -m "verify: <CODE>-<YEAR> - <what you changed>"`
      e.g. `verify: HISDSC303T-2025 - fixed Q7 wording, Q12 figure 4->5`
    - `git push`
    - If the push is rejected because someone else pushed first, run
      `git pull --rebase` and push again. Never force-push.
-6. Say in the WhatsApp group that the paper is done.
+7. Say in the WhatsApp group that the paper is done.
 
 A paper is **done** when: the md matches the photos question for
 question, the marks add up to full marks, and `[illegible]` appears only
@@ -84,16 +102,18 @@ where the photo truly hides something.
 
 ## Safety
 
-- Never commit the key file. It is gitignored, but check `git status`
-  before every commit — if you see a key file listed, do not commit it.
+- Never commit either key file. Both are gitignored, but check
+  `git status` before every commit — if you see a key file listed, do not
+  commit it. The downloaded photos and PDFs are gitignored too.
 - Never paste paper content into a public place (issue, comment, chat
   outside the group). The papers are encrypted here for a reason.
-- If you lose the key file, ask Om for it again. If the key ever leaks
+- If you lose a key file, ask Om for it again. If a key ever leaks
   publicly, tell Om at once.
 
 ## Scale note
 
-This trial is 10 papers (33 MB, mostly page photos). At 400 papers the
-photos will not live in git — they will move to object storage and this
-repo will keep the md files only. Do not add more papers to this repo
-without checking with Om first.
+This trial is 10 papers. The full 400-paper HGC set is about 1.2 GB of
+photos plus 470 MB of source PDFs, against 6 MB of text — that is why the
+photos live in R2 and not in git. New papers are added by Om's assistant
+(encrypt + upload to R2, add the paper folder with `assets.json`); do not
+add papers yourself without checking with Om first.
