@@ -33,8 +33,10 @@ def find_key(argv_key):
     return k
 
 def download(url, dest):
+    # r2.dev blocks Python urllib's default User-Agent (403); send a browser one.
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"})
     try:
-        with urllib.request.urlopen(url, timeout=120) as r:
+        with urllib.request.urlopen(req, timeout=120) as r:
             data = r.read()
     except urllib.error.HTTPError as e:
         fail(f"download failed HTTP {e.code}: {url}")
