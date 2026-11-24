@@ -1,0 +1,3 @@
+# Everything under papers/ is encrypted in git. Plaintext README and repo
+# files stay readable; paper content is only readable after `git-crypt unlock`.
+papers/** filter=git-crypt diff=git-crypt

@@ -1,0 +1,4 @@
+# NEVER commit the git-crypt key or any decrypted copy outside papers/.
+*.key
+git-crypt-key*
+.DS_Store
